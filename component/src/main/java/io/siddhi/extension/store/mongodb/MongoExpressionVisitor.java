@@ -258,8 +258,6 @@ public class MongoExpressionVisitor extends BaseExpressionVisitor {
 
     @Override
     public void beginVisitIsNull(String streamId) {
-
-
     }
 
     @Override

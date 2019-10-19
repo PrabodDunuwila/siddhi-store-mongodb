@@ -33,8 +33,7 @@ import java.util.function.Consumer;
 public class MongoTableTestUtils {
 
     private static final Log log = LogFactory.getLog(MongoTableTestUtils.class);
-    private static final String MONGO_CLIENT_URI =
-            "mongodb://{{mongo.credentials}}{{mongo.servers}}/{{mongo.database}}";
+    private static final String MONGO_CLIENT_URI =  "mongodb://localhost/mongoTest";
     private static String databaseName = "admin";
 
     private MongoTableTestUtils() {

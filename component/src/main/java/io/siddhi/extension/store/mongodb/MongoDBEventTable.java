@@ -17,21 +17,9 @@
  */
 package io.siddhi.extension.store.mongodb;
 
-import com.mongodb.MongoBulkWriteException;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoException;
-import com.mongodb.MongoSocketOpenException;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.DeleteManyModel;
-import com.mongodb.client.model.IndexModel;
-import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.WriteModel;
+import com.mongodb.*;
+import com.mongodb.client.*;
+import com.mongodb.client.model.*;
 import io.siddhi.annotation.Example;
 import io.siddhi.annotation.Extension;
 import io.siddhi.annotation.Parameter;
@@ -39,11 +27,13 @@ import io.siddhi.annotation.SystemParameter;
 import io.siddhi.annotation.util.DataType;
 import io.siddhi.core.exception.ConnectionUnavailableException;
 import io.siddhi.core.exception.SiddhiAppCreationException;
+import io.siddhi.core.table.record.AbstractQueryableRecordTable;
 import io.siddhi.core.table.record.AbstractRecordTable;
 import io.siddhi.core.table.record.ExpressionBuilder;
 import io.siddhi.core.table.record.RecordIterator;
 import io.siddhi.core.util.collection.operator.CompiledCondition;
 import io.siddhi.core.util.collection.operator.CompiledExpression;
+import io.siddhi.core.util.collection.operator.CompiledSelection;
 import io.siddhi.core.util.config.ConfigReader;
 import io.siddhi.extension.store.mongodb.exception.MongoTableException;
 import io.siddhi.extension.store.mongodb.util.MongoTableConstants;
@@ -55,12 +45,18 @@ import io.siddhi.query.api.util.AnnotationHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.mongodb.client.model.Aggregates.group;
+import static com.mongodb.client.model.Aggregates.project;
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Projections.*;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX_BY;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_PRIMARY_KEY;
@@ -281,7 +277,7 @@ import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_STORE;
                 )
         }
 )
-public class MongoDBEventTable extends AbstractRecordTable {
+public class MongoDBEventTable extends AbstractQueryableRecordTable {
     private static final Log log = LogFactory.getLog(MongoDBEventTable.class);
 
     private MongoClientURI mongoClientURI;
@@ -564,6 +560,7 @@ public class MongoDBEventTable extends AbstractRecordTable {
 
     @Override
     protected CompiledCondition compileCondition(ExpressionBuilder expressionBuilder) {
+
         MongoExpressionVisitor visitor = new MongoExpressionVisitor();
         expressionBuilder.build(visitor);
         return new MongoCompiledCondition(visitor.getCompiledCondition(), visitor.getPlaceholders());
@@ -623,4 +620,101 @@ public class MongoDBEventTable extends AbstractRecordTable {
             this.mongoClient.close();
         }
     }
+
+    @Override
+    protected RecordIterator<Object[]> query(Map<String, Object> parameterMap, CompiledCondition compiledCondition,
+                                             CompiledSelection compiledSelection, Attribute[] outputAttributes)
+            throws ConnectionUnavailableException {
+
+        Document findFilter = MongoTableUtils
+                .resolveCondition((MongoCompiledCondition) compiledCondition, parameterMap);
+
+
+        Document project = new Document("$project", new Document("_id", 0)
+                .append("symbol", 1)
+                .append("volume", 1));
+
+//        Document project = new Document("$project",compiledSelection);
+
+        List<Document> aggregateList = new ArrayList<>();
+        aggregateList.add(project);
+
+        Document matchFilter = new Document("$match",findFilter);
+
+
+
+        aggregateList.add(matchFilter);
+
+        log.info(aggregateList);
+
+        List<String> attributeList = new ArrayList<>();
+    //    attributeList.add("_id");
+        attributeList.add("symbol");
+        attributeList.add("volume");
+
+        AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(aggregateList);
+
+//        for (Document dbObject : aggregate)
+//        {
+//            System.out.println(dbObject);
+//        }
+
+//        AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(
+//                Arrays.asList(
+//                        Aggregates.project(new Document("_id",0)
+//                        .append("symbol", 1)
+//                        .append("volume", 1)),
+//                        Aggregates.match(new Document("symbol",new Document("eq","WSO2")))
+//                        )
+//        );
+
+//        FindIterable<Document> f = this.getCollectionObject().find(
+//                eq("symbol", "WSO2"))
+//                .projection(fields(include("symbol", "volume"), excludeId()))
+//                .forEach(printBlock, callbackWhenFinished);
+//        );
+
+
+
+        MongoCursor<Document> iterator = aggregate.iterator();
+
+        while (iterator.hasNext()) {
+            log.info(iterator.next());
+        }
+
+        return new MongoIterator(aggregate, attributeList);
+    }
+
+    @Override
+    protected CompiledSelection compileSelection(List<SelectAttributeBuilder> selectAttributeBuilders,
+                                                 List<ExpressionBuilder> groupByExpressionBuilder,
+                                                 ExpressionBuilder havingExpressionBuilder,
+                                                 List<OrderByAttributeBuilder> orderByAttributeBuilders,
+                                                 Long limit, Long offset) {
+
+
+        List<MongoSetExpressionVisitor> collect =
+                selectAttributeBuilders.stream().map((selectAttributeBuilder -> {
+            ExpressionBuilder expressionBuilder = selectAttributeBuilder.getExpressionBuilder();
+            MongoSetExpressionVisitor visitor = new MongoSetExpressionVisitor();
+            expressionBuilder.build(visitor);
+            return visitor;
+        })).collect(Collectors.toList());
+
+
+        Document project = new Document("$project", new Document("_id", 0));
+
+                collect.forEach((value) -> {
+                    project.append(String.valueOf(value), 1);
+                });
+
+//        MongoExpressionVisitor visitor = new MongoExpressionVisitor();
+
+
+//        return new MongoCompiledCondition(visitor.getCompiledCondition(), visitor.getPlaceholders());
+//        return new MongoDBCompileSelection();
+
+        return null;
+    }
+
 }

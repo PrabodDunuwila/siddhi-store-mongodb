@@ -17,6 +17,8 @@
  */
 package io.siddhi.extension.store.mongodb;
 
+import com.mongodb.DBObject;
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import io.siddhi.core.table.record.RecordIterator;
@@ -43,23 +45,34 @@ public class MongoIterator implements RecordIterator<Object[]> {
         this.attributeNames = attributeNames;
     }
 
+    public MongoIterator(AggregateIterable documents, List<String> attributeNames) {
+        this.documents = documents.iterator();
+        this.attributeNames = attributeNames;
+    }
+
     @Override
     public boolean hasNext() {
-        if (!this.preFetched) {
+
+//        for(Document doc : this.documents){
+//            this.nextDocument = this.next();
+//        }
+
+        return this.documents.hasNext();
+       /*if (!this.preFetched) {
             this.nextDocument = this.next();
             this.preFetched = true;
         }
-        return this.nextDocument.length != 0;
+        return this.nextDocument.length != 0;*/
     }
 
     @Override
     public Object[] next() {
-        if (this.preFetched) {
+        /*if (this.preFetched) {
             this.preFetched = false;
             Object[] result = this.nextDocument;
             this.nextDocument = null;
             return result;
-        }
+        }*/
         if (this.documents.hasNext()) {
             return this.extractRecord((Document) this.documents.next());
         } else {
