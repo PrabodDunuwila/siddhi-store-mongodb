@@ -29,16 +29,18 @@ import java.util.Map;
  */
 public class MongoDBCompileSelection implements CompiledSelection {
 
-//    private MongoDBCompileSelection compiledSelectClause;
+    private Document compileSelectQuery;
 
-    public MongoDBCompileSelection(Document select){
-        this.compiledSelectClause = compiledSelectClause;
+    public MongoDBCompileSelection(Document project){
+        this.compileSelectQuery = project;
     }
 
-//    public MongoDBCompileSelection getCompiledSelectClause() {
-//        return compiledSelectClause;
-//    }
+    public Document getCompileSelectQuery() {
+        return compileSelectQuery;
+    }
 
-    private String test = "{$project:{_id:0, symbol:1, volume:1}}";
+    public void setCompileSelectQuery(Document compileSelectQuery) {
+        this.compileSelectQuery = compileSelectQuery;
+    }
 
 }

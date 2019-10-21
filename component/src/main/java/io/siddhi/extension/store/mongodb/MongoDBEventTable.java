@@ -629,52 +629,26 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
         Document findFilter = MongoTableUtils
                 .resolveCondition((MongoCompiledCondition) compiledCondition, parameterMap);
 
+        Document project = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
 
-        Document project = new Document("$project", new Document("_id", 0)
-                .append("symbol", 1)
-                .append("volume", 1));
+//        Document project = new Document("$project", new Document("_id",0)
+//                .append("symbol", 1)
+//                .append("volume", 1));
 
-//        Document project = new Document("$project",compiledSelection);
+        log.info(project);
 
         List<Document> aggregateList = new ArrayList<>();
         aggregateList.add(project);
 
         Document matchFilter = new Document("$match",findFilter);
 
-
-
         aggregateList.add(matchFilter);
 
-        log.info(aggregateList);
-
         List<String> attributeList = new ArrayList<>();
-    //    attributeList.add("_id");
         attributeList.add("symbol");
         attributeList.add("volume");
 
         AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(aggregateList);
-
-//        for (Document dbObject : aggregate)
-//        {
-//            System.out.println(dbObject);
-//        }
-
-//        AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(
-//                Arrays.asList(
-//                        Aggregates.project(new Document("_id",0)
-//                        .append("symbol", 1)
-//                        .append("volume", 1)),
-//                        Aggregates.match(new Document("symbol",new Document("eq","WSO2")))
-//                        )
-//        );
-
-//        FindIterable<Document> f = this.getCollectionObject().find(
-//                eq("symbol", "WSO2"))
-//                .projection(fields(include("symbol", "volume"), excludeId()))
-//                .forEach(printBlock, callbackWhenFinished);
-//        );
-
-
 
         MongoCursor<Document> iterator = aggregate.iterator();
 
@@ -692,7 +666,6 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
                                                  List<OrderByAttributeBuilder> orderByAttributeBuilders,
                                                  Long limit, Long offset) {
 
-
         List<MongoSetExpressionVisitor> collect =
                 selectAttributeBuilders.stream().map((selectAttributeBuilder -> {
             ExpressionBuilder expressionBuilder = selectAttributeBuilder.getExpressionBuilder();
@@ -701,20 +674,17 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
             return visitor;
         })).collect(Collectors.toList());
 
+        Document selectedFields = new Document("_id",0);
 
-        Document project = new Document("$project", new Document("_id", 0));
+        collect.forEach((value) -> {
+            selectedFields.append(String.valueOf(value.getCompiledCondition()),1);
+        });
 
-                collect.forEach((value) -> {
-                    project.append(String.valueOf(value), 1);
-                });
+        Document project = new Document("$project", selectedFields);
 
-//        MongoExpressionVisitor visitor = new MongoExpressionVisitor();
+        log.info(project);
 
-
-//        return new MongoCompiledCondition(visitor.getCompiledCondition(), visitor.getPlaceholders());
-//        return new MongoDBCompileSelection();
-
-        return null;
+        return new MongoDBCompileSelection(project);
     }
 
 }

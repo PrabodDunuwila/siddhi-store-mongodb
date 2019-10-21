@@ -352,7 +352,6 @@ public class JoinMongoTableTest {
                     for (Event event : inEvents) {
                         EventPrinter.print(inEvents);
                         eventCount.incrementAndGet();
-                        log.info(event.getData());
                         switch (eventCount.intValue()) {
                             case 1:
                                 Assert.assertEquals(new Object[]{"A", 100L}, event.getData());
