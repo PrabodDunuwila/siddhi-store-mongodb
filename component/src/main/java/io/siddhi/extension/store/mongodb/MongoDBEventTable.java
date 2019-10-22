@@ -45,7 +45,6 @@ import io.siddhi.query.api.util.AnnotationHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,10 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.mongodb.client.model.Aggregates.group;
-import static com.mongodb.client.model.Aggregates.project;
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Projections.*;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX_BY;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_PRIMARY_KEY;
@@ -630,23 +625,32 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
                 .resolveCondition((MongoCompiledCondition) compiledCondition, parameterMap);
 
         Document project = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
-
-//        Document project = new Document("$project", new Document("_id",0)
-//                .append("symbol", 1)
-//                .append("volume", 1));
-
-        log.info(project);
+        Long limit = ((Long)((MongoDBCompileSelection)compiledSelection).getLimitAggregation());
+        Long offset = ((Long)((MongoDBCompileSelection)compiledSelection).getOffsetAggregation());
 
         List<Document> aggregateList = new ArrayList<>();
         aggregateList.add(project);
 
         Document matchFilter = new Document("$match",findFilter);
-
         aggregateList.add(matchFilter);
 
+        Document limitFilter = new Document("$limit",limit);
+        if(limit != null){
+            aggregateList.add(limitFilter);
+        }
+
+        Document offsetFilter = new Document("$skip",offset);
+        if(offset != null){
+            aggregateList.add(offsetFilter);
+        }
+
         List<String> attributeList = new ArrayList<>();
-        attributeList.add("symbol");
-        attributeList.add("volume");
+
+        for (int i=0;i<outputAttributes.length;i++){
+            attributeList.add(outputAttributes[i].getName());
+        }
+
+        System.out.println(attributeList);
 
         AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(aggregateList);
 
@@ -682,9 +686,7 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         Document project = new Document("$project", selectedFields);
 
-        log.info(project);
-
-        return new MongoDBCompileSelection(project);
+        return new MongoDBCompileSelection(project, limit, offset);
     }
 
 }

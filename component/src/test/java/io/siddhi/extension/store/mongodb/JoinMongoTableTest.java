@@ -250,7 +250,7 @@ public class JoinMongoTableTest {
                 "insert into FooTable ;" +
                 "" +
                 "@info(name = 'query2') " +
-                "from FooStream123#window.length(1) join FooTable " +
+                "from FooStream join FooTable " +
                 "select FooStream.hello as checkHello, FooTable.symbol as symbol, " +
                 "FooTable.volume as volume  " +
                 "insert into OutputStream ;";
@@ -341,7 +341,11 @@ public class JoinMongoTableTest {
                 "@info(name = 'query2') " +
                 "from FooStream join FooTable " +
                 "on FooStream.symbol == FooTable.symbol " +
-                "select FooTable.symbol as symbol, FooTable.volume as volume  " +
+                "select FooTable.symbol as symbol, FooTable.volume as volume, " +
+                "FooTable.price as price " +
+                "having volume > 30 " +
+                "limit 2 " +
+                "offset 1 " +
                 "insert into OutputStream ;";
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(streams + query);
@@ -354,7 +358,7 @@ public class JoinMongoTableTest {
                         eventCount.incrementAndGet();
                         switch (eventCount.intValue()) {
                             case 1:
-                                Assert.assertEquals(new Object[]{"A", 100L}, event.getData());
+                                Assert.assertEquals(new Object[]{"c", 100L}, event.getData());
                                 break;
                             default:
                                 break;
@@ -369,9 +373,9 @@ public class JoinMongoTableTest {
         InputHandler fooStream = siddhiAppRuntime.getInputHandler("FooStream");
         siddhiAppRuntime.start();
 
-        //stockStream.send(new Object[]{"c", 5.6f, 100L});
-        //stockStream.send(new Object[]{"IBM", 7.6f, 10L});
-        //stockStream.send(new Object[]{"c", 5.6f, 80L});
+//        stockStream.send(new Object[]{"c", 5.6f, 100L});
+//        stockStream.send(new Object[]{"IBM", 7.6f, 10L});
+//        stockStream.send(new Object[]{"c", 5.6f, 80L});
         fooStream.send(new Object[]{"c"});
         SiddhiTestHelper.waitForEvents(waitTime, 1, eventCount, timeout);
 

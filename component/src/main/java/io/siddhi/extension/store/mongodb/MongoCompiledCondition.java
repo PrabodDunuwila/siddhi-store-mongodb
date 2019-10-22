@@ -30,7 +30,6 @@ public class MongoCompiledCondition implements CompiledCondition {
     private String compiledQuery;
     private Map<String, Object> placeholders;
 
-
     public MongoCompiledCondition(String compiledQuery, Map<String, Object> parameters) {
         this.compiledQuery = compiledQuery;
         this.placeholders = parameters;
@@ -47,4 +46,5 @@ public class MongoCompiledCondition implements CompiledCondition {
     public Map<String, Object> getPlaceholders() {
         return placeholders;
     }
+
 }
