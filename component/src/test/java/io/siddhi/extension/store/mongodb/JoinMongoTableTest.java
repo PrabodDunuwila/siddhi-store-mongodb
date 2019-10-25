@@ -339,8 +339,7 @@ public class JoinMongoTableTest {
                 "@info(name = 'query2') " +
                 "from FooStream join FooTable " +
                 "on FooStream.symbol != FooTable.symbol " +
-                "select FooStream.symbol as checkSymbol, FooTable.symbol as symbol, " +
-                "FooTable.input as input  " +
+                "select FooTable.symbol as symbol, FooTable.price as price " +
                 "insert into OutputStream ;";
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(streams + query);
@@ -354,7 +353,7 @@ public class JoinMongoTableTest {
                             case 1:
                                 HashMap<String, String> input = new HashMap<>();
                                 input.put("symbol", "IBM");
-                                Assert.assertEquals(new Object[]{"WSO2_check", "WSO2", input}, event.getData());
+                                Assert.assertEquals(new Object[]{"WSO2", "5.6f", input}, event.getData());
                                 break;
                             default:
                                 break;
