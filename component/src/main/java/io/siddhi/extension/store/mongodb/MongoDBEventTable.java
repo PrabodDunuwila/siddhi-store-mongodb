@@ -39,11 +39,12 @@ import io.siddhi.annotation.SystemParameter;
 import io.siddhi.annotation.util.DataType;
 import io.siddhi.core.exception.ConnectionUnavailableException;
 import io.siddhi.core.exception.SiddhiAppCreationException;
-import io.siddhi.core.table.record.AbstractRecordTable;
+import io.siddhi.core.table.record.AbstractQueryableRecordTable;
 import io.siddhi.core.table.record.ExpressionBuilder;
 import io.siddhi.core.table.record.RecordIterator;
 import io.siddhi.core.util.collection.operator.CompiledCondition;
 import io.siddhi.core.util.collection.operator.CompiledExpression;
+import io.siddhi.core.util.collection.operator.CompiledSelection;
 import io.siddhi.core.util.config.ConfigReader;
 import io.siddhi.extension.store.mongodb.exception.MongoTableException;
 import io.siddhi.extension.store.mongodb.util.MongoTableConstants;
@@ -281,7 +282,7 @@ import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_STORE;
                 )
         }
 )
-public class MongoDBEventTable extends AbstractRecordTable {
+public class MongoDBEventTable extends AbstractQueryableRecordTable {
     private static final Log log = LogFactory.getLog(MongoDBEventTable.class);
 
     private MongoClientURI mongoClientURI;
@@ -622,5 +623,15 @@ public class MongoDBEventTable extends AbstractRecordTable {
         if (this.mongoClient != null) {
             this.mongoClient.close();
         }
+    }
+
+    @Override
+    protected RecordIterator<Object[]> query(Map<String, Object> map, CompiledCondition compiledCondition, CompiledSelection compiledSelection, Attribute[] attributes) throws ConnectionUnavailableException {
+        return null;
+    }
+
+    @Override
+    protected CompiledSelection compileSelection(List<SelectAttributeBuilder> list, List<ExpressionBuilder> list1, ExpressionBuilder expressionBuilder, List<OrderByAttributeBuilder> list2, Long aLong, Long aLong1) {
+        return null;
     }
 }
