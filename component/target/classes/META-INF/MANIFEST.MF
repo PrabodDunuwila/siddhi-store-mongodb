@@ -1,0 +1,49 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1572006729216
+Build-Jdk: 1.8.0_161
+Built-By: prabod
+Bundle-Contributors: WSO2 Inc
+Bundle-Copyright: WSO2 Inc
+Bundle-Description: WSO2 is an open source application development softw
+ are company focused on providing service-orientedarchitecture solutions
+  for professional developers.
+Bundle-Developers: WSO2 Inc
+Bundle-DocURL: https://docs.wso2.com
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: siddhi-store-mongodb
+Bundle-SymbolicName: siddhi-store-mongodb
+Bundle-Vendor: WSO2 Inc
+Bundle-Version: 2.0.4.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: io.siddhi.extension.store.mongodb;uses:="com.mongodb.cli
+ ent,io.siddhi.annotation,io.siddhi.annotation.util,io.siddhi.core.excep
+ tion,io.siddhi.core.table.record,io.siddhi.core.util.collection.operato
+ r,io.siddhi.core.util.config,io.siddhi.query.api.definition,io.siddhi.q
+ uery.api.expression.condition";version="2.0.4",io.siddhi.extension.stor
+ e.mongodb.exception;uses:="io.siddhi.core.exception";version="2.0.4",io
+ .siddhi.extension.store.mongodb.util;uses:="com.mongodb,com.mongodb.cli
+ ent,com.mongodb.client.model,io.siddhi.core.util.config,io.siddhi.exten
+ sion.store.mongodb,io.siddhi.query.api.annotation,io.siddhi.query.api.d
+ efinition,org.bson";version="2.0.4"
+Import-Package: org.apache.commons.logging;version="[1.1.1,2.0)",io.sidd
+ hi.annotation;version="[5.0.0,6.0.0)",io.siddhi.annotation.util;version
+ ="[5.0.0,6.0.0)",io.siddhi.core.exception;version="[5.0.0,6.0.0)",io.si
+ ddhi.core.table.record;version="[5.0.0,6.0.0)",io.siddhi.core.util.coll
+ ection.operator;version="[5.0.0,6.0.0)",io.siddhi.core.util.config;vers
+ ion="[5.0.0,6.0.0)",io.siddhi.query.api.annotation;version="[5.0.0,6.0.
+ 0)",io.siddhi.query.api.definition;version="[5.0.0,6.0.0)",io.siddhi.qu
+ ery.api.expression.condition;version="[5.0.0,6.0.0)",io.siddhi.query.ap
+ i.util;version="[5.0.0,6.0.0)",com.mongodb;resolution:=optional;version
+ ="[3.4,4)",com.mongodb.bulk;resolution:=optional;version="[3.4,4)",com.
+ mongodb.client;resolution:=optional;version="[3.4,4)",com.mongodb.clien
+ t.model;resolution:=optional;version="[3.4,4)",io.siddhi.extension.stor
+ e.mongodb;resolution:=optional,io.siddhi.extension.store.mongodb.except
+ ion;resolution:=optional,io.siddhi.extension.store.mongodb.util;resolut
+ ion:=optional,javax.net;resolution:=optional,javax.net.ssl;resolution:=
+ optional,org.bson;resolution:=optional;version="[3.4,4)",org.bson.conve
+ rsions;resolution:=optional;version="[3.4,4)",org.bson.json;resolution:
+ =optional;version="[3.4,4)"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+SCM-Revision: 06ac8b4593e294b6eac5acf7b46c61504f7cc6d2
+Tool: Bnd-3.0.0.201509101326

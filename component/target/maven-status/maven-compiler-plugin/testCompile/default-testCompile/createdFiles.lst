@@ -1,0 +1,16 @@
+io/siddhi/extension/store/mongodb/DeleteFromMongoTableTest.class
+io/siddhi/extension/store/mongodb/UpdateOrInsertMongoTableTest.class
+io/siddhi/extension/store/mongodb/JoinMongoTableTest$1.class
+io/siddhi/extension/store/mongodb/DefineMongoTableTest.class
+io/siddhi/extension/store/mongodb/ConditionVisitorTest.class
+io/siddhi/extension/store/mongodb/ContainsMongoTableTest$2.class
+io/siddhi/extension/store/mongodb/UpdateMongoTableTest.class
+io/siddhi/extension/store/mongodb/ContainsMongoTableTest$1.class
+io/siddhi/extension/store/mongodb/UnitTestAppender.class
+io/siddhi/extension/store/mongodb/InsertIntoMongoTableTest.class
+io/siddhi/extension/store/mongodb/JoinMongoTableTest$3.class
+io/siddhi/extension/store/mongodb/MongoTableTestUtils.class
+io/siddhi/extension/store/mongodb/ContainsMongoTableTest.class
+io/siddhi/extension/store/mongodb/JoinMongoTableTest$2.class
+io/siddhi/extension/store/mongodb/MongoDBConnectionSSLTest.class
+io/siddhi/extension/store/mongodb/JoinMongoTableTest.class

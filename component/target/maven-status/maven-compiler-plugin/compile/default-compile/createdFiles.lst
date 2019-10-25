@@ -1,0 +1,11 @@
+META-INF/annotations/io.siddhi.annotation.Extension
+io/siddhi/extension/store/mongodb/MongoExpressionVisitor$1.class
+io/siddhi/extension/store/mongodb/MongoCompiledCondition.class
+io/siddhi/extension/store/mongodb/util/MongoTableConstants.class
+io/siddhi/extension/store/mongodb/MongoDBEventTable.class
+io/siddhi/extension/store/mongodb/MongoSetExpressionVisitor.class
+io/siddhi/extension/store/mongodb/util/MongoTableUtils.class
+io/siddhi/extension/store/mongodb/MongoExpressionVisitor.class
+io/siddhi/extension/store/mongodb/util/Constant.class
+io/siddhi/extension/store/mongodb/MongoIterator.class
+io/siddhi/extension/store/mongodb/exception/MongoTableException.class
