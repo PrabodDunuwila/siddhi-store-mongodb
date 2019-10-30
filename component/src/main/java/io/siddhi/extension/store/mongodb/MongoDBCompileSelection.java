@@ -2,29 +2,34 @@
 package io.siddhi.extension.store.mongodb;
 
 import io.siddhi.core.util.collection.operator.CompiledSelection;
-import org.bson.Document;
 
 public class MongoDBCompileSelection implements CompiledSelection {
 
-    private Document compileSelectQuery;
+    private String compileSelectQuery;
+    private String having;
     private Long limit;
     private Long offset;
 
-    public MongoDBCompileSelection(Document project, Long limit, Long offset){
+    public MongoDBCompileSelection(String project, String having, Long limit, Long offset){
         this.compileSelectQuery = project;
+        this.having = having;
         this.limit = limit;
         this.offset = offset;
     }
 
-    public Document getCompileSelectQuery() {
+    public String getCompileSelectQuery() {
         return compileSelectQuery;
     }
 
-    public Long getLimitAggregation(){
+    public String getHaving(){
+        return this.having;
+    }
+
+    public Long getLimit(){
         return this.limit;
     }
 
-    public Long getOffsetAggregation(){
+    public Long getOffset(){
         return this.offset;
     }
 

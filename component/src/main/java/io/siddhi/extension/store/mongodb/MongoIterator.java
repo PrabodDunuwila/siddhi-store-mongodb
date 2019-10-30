@@ -51,22 +51,21 @@ public class MongoIterator implements RecordIterator<Object[]> {
 
     @Override
     public boolean hasNext() {
-//        if (!this.preFetched) {
-//            this.nextDocument = this.next();
-//            this.preFetched = true;
-//        }
-//        return this.nextDocument.length != 0;
-        return this.documents.hasNext();
+        if (!this.preFetched) {
+            this.nextDocument = this.next();
+            this.preFetched = true;
+        }
+        return this.nextDocument.length != 0;
     }
 
     @Override
     public Object[] next() {
-//        if (this.preFetched) {
-//            this.preFetched = false;
-//            Object[] result = this.nextDocument;
-//            this.nextDocument = null;
-//            return result;
-//        }
+        if (this.preFetched) {
+            this.preFetched = false;
+            Object[] result = this.nextDocument;
+            this.nextDocument = null;
+            return result;
+        }
         if (this.documents.hasNext()) {
             return this.extractRecord((Document) this.documents.next());
         } else {

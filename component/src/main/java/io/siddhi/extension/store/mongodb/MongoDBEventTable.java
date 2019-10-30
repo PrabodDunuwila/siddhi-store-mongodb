@@ -17,12 +17,7 @@
  */
 package io.siddhi.extension.store.mongodb;
 
-import com.mongodb.MongoBulkWriteException;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoException;
-import com.mongodb.MongoSocketOpenException;
+import com.mongodb.*;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -33,6 +28,7 @@ import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
+import com.mongodb.util.JSON;
 import io.siddhi.annotation.Example;
 import io.siddhi.annotation.Extension;
 import io.siddhi.annotation.Parameter;
@@ -41,7 +37,6 @@ import io.siddhi.annotation.util.DataType;
 import io.siddhi.core.exception.ConnectionUnavailableException;
 import io.siddhi.core.exception.SiddhiAppCreationException;
 import io.siddhi.core.table.record.AbstractQueryableRecordTable;
-import io.siddhi.core.table.record.AbstractRecordTable;
 import io.siddhi.core.table.record.ExpressionBuilder;
 import io.siddhi.core.table.record.RecordIterator;
 import io.siddhi.core.util.collection.operator.CompiledCondition;
@@ -57,11 +52,11 @@ import io.siddhi.query.api.definition.TableDefinition;
 import io.siddhi.query.api.util.AnnotationHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bson.BsonDocument;
 import org.bson.Document;
+import org.omg.PortableServer.LIFESPAN_POLICY_ID;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX;
@@ -635,27 +630,36 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         Document findFilter = MongoTableUtils
                 .resolveCondition((MongoCompiledCondition) compiledCondition, parameterMap);
+        log.info(findFilter);
 
-        Document project = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
-//        String having = ((MongoDBCompileSelection)compiledSelection).getHavingAggregation();
-        Long limit = ((Long)((MongoDBCompileSelection)compiledSelection).getLimitAggregation());
-        Long offset = ((Long)((MongoDBCompileSelection)compiledSelection).getOffsetAggregation());
+        String selectQuery = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
+        String havingQuery = ((MongoDBCompileSelection) compiledSelection).getHaving();
 
-        log.info(project);
-//        log.info(having);
+//        for(Object value: parameterMap.values()){
+//            String val = value.toString();
+//            selectQuery = selectQuery.replaceFirst("\\?",val);
+//        }
 
-//        Document project1 = new Document("$project",new Document("_id",0).append("symbol","$symbol").append("volume","$volume").append("price",new Document("$literal","100")));
-//        log.info(project1);
+        for(int i=0;i<parameterMap.values().size();i++){
+//            log.info(parameterMap.values().toArray()[i].getClass().getTypeName());
+            selectQuery = selectQuery.replaceFirst("\\?",""+parameterMap.values().toArray()[i]);
+        }
+
+        Document project = Document.parse(selectQuery);
+        Document having = Document.parse(havingQuery);
+        Long limit = ((Long)((MongoDBCompileSelection)compiledSelection).getLimit());
+        Long offset = ((Long)((MongoDBCompileSelection)compiledSelection).getOffset());
 
         List<Document> aggregateList = new ArrayList<>();
-        aggregateList.add(project);
 
         Document matchFilter = new Document("$match",findFilter);
         aggregateList.add(matchFilter);
-        log.info(matchFilter);
 
-//        Document havingFilter = new Document("$match", having);
-//        aggregateList.add(havingFilter);
+        aggregateList.add(project);
+
+        if(((MongoDBCompileSelection) compiledSelection).getHaving() != null){
+            aggregateList.add(having);
+        }
 
         if(offset != null){
             Document offsetFilter = new Document("$skip",offset);
@@ -673,8 +677,6 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
             attributeList.add(outputAttributes[i].getName());
         }
 
-        System.out.println(attributeList);
-
         AggregateIterable<Document> aggregate = this.getCollectionObject().aggregate(aggregateList);
 
         MongoCursor<Document> iterator = aggregate.iterator();
@@ -682,6 +684,8 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
         while (iterator.hasNext()) {
             log.info(iterator.next());
         }
+
+
 
         return new MongoIterator(aggregate, attributeList);
     }
@@ -701,15 +705,60 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
                     return visitor;
                 })).collect(Collectors.toList());
 
-        Document selectedFields = new Document("_id",0);
+        StringBuilder compiledSelectionJSON = new StringBuilder();
+        compiledSelectionJSON.append("{$project:{_id:0, ");
 
-        collect.forEach((value) -> {
-            selectedFields.append(String.valueOf(value.getCompiledCondition()),1);
-        });
+        int i=0;
 
-        Document project = new Document("$project", selectedFields);
+        for (MongoSetExpressionVisitor value : collect) {
+            String rename = selectAttributeBuilders.get(i).getRename();
+            if(value.getStreamVarCount() == 0 && value.getConstantCount()==0) {
+                compiledSelectionJSON.append(rename);
+                compiledSelectionJSON.append(':');
+                compiledSelectionJSON.append("\'$");
+                compiledSelectionJSON.append(value.getCompiledCondition());
+                compiledSelectionJSON.append("\'");
+                if(collect.indexOf(value) == (collect.size() -1)){
+                    compiledSelectionJSON.append('}');
+                }else{
+                    compiledSelectionJSON.append(',');
+                }
+            }else if(value.getStreamVarCount() == 1 && value.getConstantCount()==0){
+                compiledSelectionJSON.append(rename);
+                compiledSelectionJSON.append(':');
+                compiledSelectionJSON.append("{\'$literal\':");
+                compiledSelectionJSON.append("\'?\'");
+                compiledSelectionJSON.append('}');
+                if(collect.indexOf(value) == (collect.size() -1)){
+                    compiledSelectionJSON.append('}');
+                }else{
+                    compiledSelectionJSON.append(',');
+                }
+            }
+//            else if(value.getStreamVarCount() == 0 && value.getConstantCount()==1){   //collect.get(0).getPlaceholders().values()
+//                compiledSelectionJSON.append(rename);
+//                compiledSelectionJSON.append(':');
+//                compiledSelectionJSON.append("{\'$literal\':");
+//                compiledSelectionJSON.append(value.getPlaceholders().values());
+//                compiledSelectionJSON.append('}');
+//                if(collect.indexOf(value) == (collect.size() -1)){
+//                    compiledSelectionJSON.append('}');
+//                }else{
+//                    compiledSelectionJSON.append(',');
+//                }
+//            }
+            i++;
+        }
+        compiledSelectionJSON.append('}');
 
-        return new MongoDBCompileSelection(project, limit, offset);
+        MongoExpressionVisitor visitor = new MongoExpressionVisitor();
+        havingExpressionBuilder.build(visitor);
+        String having  = visitor.getCompiledCondition();
+        having = "{$match:"+having+"}";
+
+        String project = compiledSelectionJSON.toString();
+
+        return new MongoDBCompileSelection(project, having, limit, offset);
 
     }
 }
