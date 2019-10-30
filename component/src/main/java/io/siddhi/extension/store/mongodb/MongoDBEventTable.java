@@ -634,6 +634,7 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         String selectQuery = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
         String havingQuery = ((MongoDBCompileSelection) compiledSelection).getHaving();
+        String orderbyQuery = ((MongoDBCompileSelection) compiledSelection).getOrderby();
 
 //        for(Object value: parameterMap.values()){
 //            String val = value.toString();
@@ -647,6 +648,7 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         Document project = Document.parse(selectQuery);
         Document having = Document.parse(havingQuery);
+        Document orderby = Document.parse(orderbyQuery);
         Long limit = ((Long)((MongoDBCompileSelection)compiledSelection).getLimit());
         Long offset = ((Long)((MongoDBCompileSelection)compiledSelection).getOffset());
 
@@ -657,9 +659,14 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         aggregateList.add(project);
 
-        if(((MongoDBCompileSelection) compiledSelection).getHaving() != null){
+        if(havingQuery != null){
             aggregateList.add(having);
         }
+
+        if(orderbyQuery != null){
+            aggregateList.add(orderby);
+        }
+
 
         if(offset != null){
             Document offsetFilter = new Document("$skip",offset);
@@ -685,8 +692,6 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
             log.info(iterator.next());
         }
 
-
-
         return new MongoIterator(aggregate, attributeList);
     }
 
@@ -694,8 +699,20 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
     protected CompiledSelection compileSelection(List<SelectAttributeBuilder> selectAttributeBuilders,
                                                  List<ExpressionBuilder> groupByExpressionBuilder,
                                                  ExpressionBuilder havingExpressionBuilder,
-                                                 List<OrderByAttributeBuilder> orderByAttributeBuilder,
+                                                 List<OrderByAttributeBuilder> orderByAttributeBuilders,
                                                  Long limit, Long offset) {
+
+        String project = projectionString(selectAttributeBuilders);
+
+        String having = havingString(havingExpressionBuilder);
+
+        String orderby = orderbyString(orderByAttributeBuilders);
+
+        return new MongoDBCompileSelection(project, having, orderby, limit, offset);
+
+    }
+
+    private String projectionString(List<SelectAttributeBuilder> selectAttributeBuilders){
 
         List<MongoSetExpressionVisitor> collect =
                 selectAttributeBuilders.stream().map((selectAttributeBuilder -> {
@@ -751,14 +768,52 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
         }
         compiledSelectionJSON.append('}');
 
+        return compiledSelectionJSON.toString();
+    }
+
+    private String havingString(ExpressionBuilder havingExpressionBuilder){
         MongoExpressionVisitor visitor = new MongoExpressionVisitor();
         havingExpressionBuilder.build(visitor);
         String having  = visitor.getCompiledCondition();
-        having = "{$match:"+having+"}";
-
-        String project = compiledSelectionJSON.toString();
-
-        return new MongoDBCompileSelection(project, having, limit, offset);
-
+        return "{$match:"+having+"}";
     }
+
+    private String orderbyString(List<OrderByAttributeBuilder> orderByAttributeBuilders){
+        List<MongoSetExpressionVisitor> collectOrderby =
+                orderByAttributeBuilders.stream().map((orderByAttributeBuilder -> {
+                    ExpressionBuilder expressionBuilder = orderByAttributeBuilder.getExpressionBuilder();
+                    MongoSetExpressionVisitor orderbyVisitor = new MongoSetExpressionVisitor();
+                    expressionBuilder.build(orderbyVisitor);
+                    return orderbyVisitor;
+                })).collect(Collectors.toList());
+
+        StringBuilder compiledOrderbyJSON = new StringBuilder();
+        compiledOrderbyJSON.append("{$sort:{");
+
+        int j=0;
+
+        for (MongoSetExpressionVisitor value : collectOrderby) {
+            String order = orderByAttributeBuilders.get(j).getOrder().name();
+            if(value.getStreamVarCount() == 0) {
+                compiledOrderbyJSON.append(value.getCompiledCondition());
+                if(order == "ASC"){
+                    compiledOrderbyJSON.append(":1");
+                }else if(order == "DESC"){
+                    compiledOrderbyJSON.append(":-1");
+                }
+                if(collectOrderby.indexOf(value) == (collectOrderby.size() -1)){
+                    compiledOrderbyJSON.append('}');
+                }else{
+                    compiledOrderbyJSON.append(',');
+                }
+            }
+            j++;
+        }
+        compiledOrderbyJSON.append('}');
+
+        log.info(compiledOrderbyJSON);
+
+        return compiledOrderbyJSON.toString();
+    }
+
 }

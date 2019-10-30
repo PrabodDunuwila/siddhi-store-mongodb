@@ -341,8 +341,7 @@ public class JoinMongoTableTest {
                 "on FooStream.symbol == FooTable.symbol " +
                 "select FooStream.symbol as checksymbol, FooTable.price as price, FooStream.volume as volume " +
                 "having FooTable.price > 5 " +
-                "limit 1 " +
-                "offset 1 " +
+                "order by price DESC, volume "+
                 "insert into OutputStream ;";
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(streams + query);
@@ -369,9 +368,10 @@ public class JoinMongoTableTest {
         InputHandler fooStream = siddhiAppRuntime.getInputHandler("FooStream");
         siddhiAppRuntime.start();
 
-        stockStream.send(new Object[]{"WSO2", 5.5f});
+        stockStream.send(new Object[]{"WSO2", 6.5f});
         stockStream.send(new Object[]{"WSO2", 10.5f});
         stockStream.send(new Object[]{"IBM", 5.4f});
+        stockStream.send(new Object[]{"WSO2", 9.5f});
         Thread.sleep(2000);
         fooStream.send(new Object[]{"WSO2",10});
         SiddhiTestHelper.waitForEvents(waitTime, 1, eventCount, timeout);

@@ -7,12 +7,14 @@ public class MongoDBCompileSelection implements CompiledSelection {
 
     private String compileSelectQuery;
     private String having;
+    private String orderby;
     private Long limit;
     private Long offset;
 
-    public MongoDBCompileSelection(String project, String having, Long limit, Long offset){
+    public MongoDBCompileSelection(String project, String having, String orderby, Long limit, Long offset){
         this.compileSelectQuery = project;
         this.having = having;
+        this.orderby = orderby;
         this.limit = limit;
         this.offset = offset;
     }
@@ -23,6 +25,10 @@ public class MongoDBCompileSelection implements CompiledSelection {
 
     public String getHaving(){
         return this.having;
+    }
+
+    public  String getOrderby(){
+        return this.orderby;
     }
 
     public Long getLimit(){
