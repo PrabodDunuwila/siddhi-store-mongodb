@@ -630,19 +630,22 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         Document findFilter = MongoTableUtils
                 .resolveCondition((MongoCompiledCondition) compiledCondition, parameterMap);
-        log.info(findFilter);
 
         String selectQuery = ((MongoDBCompileSelection)compiledSelection).getCompileSelectQuery();
         String havingQuery = ((MongoDBCompileSelection) compiledSelection).getHaving();
         String orderbyQuery = ((MongoDBCompileSelection) compiledSelection).getOrderby();
 
-//        for(Object value: parameterMap.values()){
-//            String val = value.toString();
-//            selectQuery = selectQuery.replaceFirst("\\?",val);
-//        }
+        int countOfStreamVarInOrderby = 0;
+        for(int i=0; i < orderbyQuery.length(); i++)
+        {    if(orderbyQuery.charAt(i) == '?')
+            countOfStreamVarInOrderby++;
+        }
 
         for(int i=0;i<parameterMap.values().size();i++){
-//            log.info(parameterMap.values().toArray()[i].getClass().getTypeName());
+            if(countOfStreamVarInOrderby>1){
+                orderbyQuery = orderbyQuery.replaceFirst("\\?",""+parameterMap.keySet().toArray()[i]);
+                countOfStreamVarInOrderby--;
+            }
             selectQuery = selectQuery.replaceFirst("\\?",""+parameterMap.values().toArray()[i]);
         }
 
@@ -659,7 +662,7 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
 
         aggregateList.add(project);
 
-        if(havingQuery != null){
+        if(havingQuery != null){            // && havingQuery.isEmpty()
             aggregateList.add(having);
         }
 
@@ -752,21 +755,23 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
                     compiledSelectionJSON.append(',');
                 }
             }
-//            else if(value.getStreamVarCount() == 0 && value.getConstantCount()==1){   //collect.get(0).getPlaceholders().values()
-//                compiledSelectionJSON.append(rename);
-//                compiledSelectionJSON.append(':');
-//                compiledSelectionJSON.append("{\'$literal\':");
-//                compiledSelectionJSON.append(value.getPlaceholders().values());
-//                compiledSelectionJSON.append('}');
-//                if(collect.indexOf(value) == (collect.size() -1)){
-//                    compiledSelectionJSON.append('}');
-//                }else{
-//                    compiledSelectionJSON.append(',');
-//                }
-//            }
+            else if(value.getStreamVarCount() == 0 && value.getConstantCount()==1){
+                compiledSelectionJSON.append(rename);
+                compiledSelectionJSON.append(':');
+                compiledSelectionJSON.append("{\'$literal\':");
+                compiledSelectionJSON.append("\'"+(collect.get(3).getPlaceholders().entrySet().toArray()[0])+"\'");    //collect.get(3).getPlaceholders().values().toArray()[0]
+                compiledSelectionJSON.append('}');
+                if(collect.indexOf(value) == (collect.size() -1)){
+                    compiledSelectionJSON.append('}');
+                }else{
+                    compiledSelectionJSON.append(',');
+                }
+            }
             i++;
         }
         compiledSelectionJSON.append('}');
+
+        log.info(compiledSelectionJSON);
 
         return compiledSelectionJSON.toString();
     }
@@ -796,6 +801,19 @@ public class MongoDBEventTable extends AbstractQueryableRecordTable {
             String order = orderByAttributeBuilders.get(j).getOrder().name();
             if(value.getStreamVarCount() == 0) {
                 compiledOrderbyJSON.append(value.getCompiledCondition());
+                if(order == "ASC"){
+                    compiledOrderbyJSON.append(":1");
+                }else if(order == "DESC"){
+                    compiledOrderbyJSON.append(":-1");
+                }
+                if(collectOrderby.indexOf(value) == (collectOrderby.size() -1)){
+                    compiledOrderbyJSON.append('}');
+                }else{
+                    compiledOrderbyJSON.append(',');
+                }
+            }
+            else if(value.getStreamVarCount() == 1){
+                compiledOrderbyJSON.append('?');
                 if(order == "ASC"){
                     compiledOrderbyJSON.append(":1");
                 }else if(order == "DESC"){
