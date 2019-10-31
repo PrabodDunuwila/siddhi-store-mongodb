@@ -338,9 +338,9 @@ public class JoinMongoTableTest {
                 "" +
                 "@info(name = 'query2') " +
                 "from FooStream join FooTable " +
-                "select FooStream.symbol as checksymbol, FooTable.symbol as tblSymbol, FooTable.price as price, 'aa' as constant " +
-                "having price < 20 " +
-                "order by price "+
+                "select FooStream.symbol as checkSymbol, FooTable.symbol as tblSymbol, FooTable.price as price, '100' as fixedVal " +
+                "having price < 10 " +
+                "order by price DESC "+
                 "limit 2 "+
                 "offset 1 "+
                 "insert into OutputStream ;";
@@ -371,8 +371,8 @@ public class JoinMongoTableTest {
 
         stockStream.send(new Object[]{"WSO2", 6.5f});
         stockStream.send(new Object[]{"WSO2", 10.5f});
-        stockStream.send(new Object[]{"IBM", 5.5f});
         stockStream.send(new Object[]{"WSO2", 9.5f});
+        stockStream.send(new Object[]{"IBM", 8.5f});
         fooStream.send(new Object[]{"WSO2",10});
         SiddhiTestHelper.waitForEvents(waitTime, 1, eventCount, timeout);
 
