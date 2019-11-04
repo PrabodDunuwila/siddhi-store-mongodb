@@ -6,7 +6,6 @@ import io.siddhi.core.util.collection.operator.CompiledSelection;
 public class MongoDBCompileSelection implements CompiledSelection {
 
     private String compileSelectQuery;
-    private String groupby;
     private String having;
     private String orderby;
     private Long limit;
@@ -14,7 +13,6 @@ public class MongoDBCompileSelection implements CompiledSelection {
 
     public MongoDBCompileSelection(String project, String having, String orderby, Long limit, Long offset){
         this.compileSelectQuery = project;
-//        this.groupby = groupby;
         this.having = having;
         this.orderby = orderby;
         this.limit = limit;
@@ -24,10 +22,6 @@ public class MongoDBCompileSelection implements CompiledSelection {
     public String getCompileSelectQuery() {
         return compileSelectQuery;
     }
-
-//    public String getGroupby(){
-//        return this.groupby;
-//    }
 
     public String getHaving(){
         return this.having;
