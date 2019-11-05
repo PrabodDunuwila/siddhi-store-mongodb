@@ -337,14 +337,12 @@ public class JoinMongoTableTest {
                 "insert into FooTable ;" +
                 "" +
                 "@info(name = 'query2') " +
-                "from FooStream as s join FooTable as t " +
-//                "on  t.symbol == 'WSO2' " +
-                "select t.symbol as symbol " +
-                "group by t.symbol " +
-//                "having price < 10 " +
-//                "order by price DESC "+
-//                "limit 2 "+
-//                "offset 1 "+
+                "from FooStream join FooTable " +
+                "select FooStream.symbol as checkSymbol, FooTable.symbol as tblSymbol, FooTable.price as price, '100' as fixedVal " +
+                "having price < 10 " +
+                "order by price DESC "+
+                "limit 2 "+
+                "offset 1 "+
                 "insert into OutputStream ;";
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(streams + query);
@@ -403,9 +401,13 @@ public class JoinMongoTableTest {
                 "insert into FooTable ;" +
                 "" +
                 "@info(name = 'query2') " +
-                "from FooTable " +
-                "select symbol, price " +
-                "group by price "+
+                "from FooStream as s join FooTable as t " +
+                "select sum(t.price) as sumprice, avg(t.price) as avgprice, min(t.price) as minprice, max(t.price) as maxprice " +
+                "group by t.symbol " +
+                "having maxprice > 8 "+
+                "order by maxprice "+
+                "limit 5 "+
+                "offset 1"+
                 "insert into OutputStream ;";
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(streams + query);
@@ -417,7 +419,7 @@ public class JoinMongoTableTest {
                         eventCount.incrementAndGet();
                         switch (eventCount.intValue()) {
                             case 1:
-                                Assert.assertEquals(new Object[]{"WSO2", 10.5, "10"}, event.getData());
+                                Assert.assertEquals(new Object[]{"WSO2", 10}, event.getData());
                                 break;
                             default:
                                 break;
@@ -432,11 +434,11 @@ public class JoinMongoTableTest {
         InputHandler fooStream = siddhiAppRuntime.getInputHandler("FooStream");
         siddhiAppRuntime.start();
 
-        stockStream.send(new Object[]{"WSO2", 6.5f});
-        stockStream.send(new Object[]{"WSO2", 10.5f});
+        stockStream.send(new Object[]{"WINDOWS", 12.5f});
+        stockStream.send(new Object[]{"GOOGLE", 10.5f});
         stockStream.send(new Object[]{"WSO2", 9.5f});
         stockStream.send(new Object[]{"IBM", 8.5f});
-        fooStream.send(new Object[]{"WSO2",10});
+        fooStream.send(new Object[]{"WSO2",10f});
         SiddhiTestHelper.waitForEvents(waitTime, 1, eventCount, timeout);
 
         siddhiAppRuntime.shutdown();

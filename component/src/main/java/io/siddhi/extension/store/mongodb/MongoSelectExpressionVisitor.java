@@ -18,8 +18,7 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
     private int streamVarCount;
     private int constantCount;
 
-    private String compileString;
-    private StringBuilder functionString;
+    private StringBuilder compileString;
 
     private String[] supportedFunctions = {"sum", "avg", "min", "max"};
 
@@ -28,11 +27,11 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
         this.constantCount = 0;
         this.conditionOperands = new Stack<>();
         this.placeholders = new HashMap<>();
-        this.functionString = new StringBuilder();
+        this.compileString = new StringBuilder();
     }
 
     public String getCompiledCondition() {
-        return compileString;
+        return compileString.toString();
     }
 
     public Stack<String> getConditionOperands(){
@@ -50,7 +49,7 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
 
     @Override
     public void beginVisitConstant(Object value, Attribute.Type type) {
-        compileString = ":{\'$literal\':"+value+"}";
+        compileString.append(":{\'$literal\':"+value+"}");
     }
 
     @Override
@@ -59,7 +58,7 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
 
     @Override
     public void beginVisitStoreVariable(String storeId, String attributeName, Attribute.Type type) {
-        compileString = ":\'$"+attributeName+"\'";
+        compileString.append(":\'$"+attributeName+"\'");
     }
 
     @Override
@@ -68,7 +67,7 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
 
     @Override
     public void beginVisitStreamVariable(String id, String streamId, String attributeName, Attribute.Type type) {
-        compileString = ":{\'$literal\':\'?\'}";
+        compileString.append(":{\'$literal\':\'?\'}");
     }
 
     @Override
@@ -79,8 +78,7 @@ public class MongoSelectExpressionVisitor extends BaseExpressionVisitor {
     public void beginVisitAttributeFunction(String namespace, String functionName) {
         if(MongoTableUtils.isEmpty(namespace) &&
                 (Arrays.stream(supportedFunctions).anyMatch(functionName::equals))){
-            functionString.append(":{"+functionName+":'$price'}");
-            System.out.println(functionString);
+            compileString.append(":{$"+functionName);
         } else{
             throw new MongoTableException("The RDBMS Event table does not support functions other than \" +\n" +
                             " \"sum(), avg(), min(), max().");
